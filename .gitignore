@@ -1,0 +1,16 @@
+# Build artifacts
+build/
+*.o
+*.a
+
+# IDE files
+.vscode/
+.clangd/
+.cache/
+
+# Generated files
+compile_commands.json
+
+# OS files
+.DS_Store
+Thumbs.db
