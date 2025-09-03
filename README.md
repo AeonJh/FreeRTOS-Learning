@@ -1,5 +1,7 @@
 # FreeRTOS Learning Project
 
+[![FreeRTOS Build and Test](https://github.com/AeonJh/FreeRTOS-Learning/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/AeonJh/FreeRTOS-Learning/actions/workflows/build.yml)
+
 CMake-based FreeRTOS learning environment with clangd support.
 
 ## Quick Start
