@@ -1,0 +1,86 @@
+name: FreeRTOS Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Initialize submodules
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+        
+    - name: Configure CMake
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      
+    - name: Build project
+      run: cmake --build build --parallel $(nproc)
+      
+    - name: Verify executables exist
+      run: |
+        ls -la build/
+        test -x build/01_basic_task
+        test -x build/02_queue_example
+        test -x build/03_semaphore_example
+        test -x build/04_timer_example
+        echo "✅ All executables built successfully"
+        
+    - name: Test basic task example
+      run: timeout 5s build/01_basic_task || [ $? -eq 124 ]
+      
+    - name: Test queue example
+      run: timeout 5s build/02_queue_example || [ $? -eq 124 ]
+      
+    - name: Test semaphore example
+      run: timeout 5s build/03_semaphore_example || [ $? -eq 124 ]
+      
+    - name: Test timer example
+      run: timeout 10s build/04_timer_example || [ $? -eq 124 ]
+      
+    - name: Generate compile commands
+      run: |
+        cp build/compile_commands.json .
+        echo "✅ compile_commands.json generated"
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: freertos-examples
+        path: |
+          build/01_basic_task
+          build/02_queue_example
+          build/03_semaphore_example
+          build/04_timer_example
+          compile_commands.json
+        retention-days: 30
+        
+    - name: Build summary
+      if: always()
+      run: |
+        echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Examples Built:" >> $GITHUB_STEP_SUMMARY
+        echo "- 01_basic_task (Task scheduling)" >> $GITHUB_STEP_SUMMARY  
+        echo "- 02_queue_example (Inter-task communication)" >> $GITHUB_STEP_SUMMARY
+        echo "- 03_semaphore_example (Synchronization)" >> $GITHUB_STEP_SUMMARY
+        echo "- 04_timer_example (Software timers)" >> $GITHUB_STEP_SUMMARY
